@@ -2,3 +2,19 @@
 .venv/
 __pycache__/
 *.log
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Virtual environments
+.venv/
+venv/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+
+# Local cases / temp runs
+cases/
+.tmp*/

@@ -318,6 +318,19 @@ def normalize_transactions(
     normalized['source_file'] = df[source_file_col]
     normalized['row_id'] = _build_row_id(df, source_file_col, 'TXN', 'row_id')
 
+    normalized.attrs['detected_fields'] = {
+        "date": date_col,
+        "amount": amount_col or "auto",
+        "description": description_col,
+        "reference": reference_col
+    }
+    normalized.attrs['detected_mappings'] = {
+        "txn_date": date_col,
+        "txn_amount": amount_col or "auto",
+        "description": description_col,
+        "reference": reference_col
+    }
+
     if normalized['txn_date'].isna().all():
         raise ValueError(
             "Date column could not be parsed. "

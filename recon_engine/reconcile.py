@@ -518,23 +518,82 @@ def run_reconciliation_from_file_groups(
     system_c_files: Optional[List[str]] = None,
     date_window_days: int = 3
 ) -> Dict[str, Any]:
+    """
+    Run reconciliation for grouped system files with normalization metadata.
+    """
     try:
         if not system_a_files or not system_b_files:
             raise ValueError("System A and System B files are required.")
-        a_frames = [normalize_transactions(ingest_file(path)) for path in system_a_files]
-        b_frames = [normalize_transactions(ingest_file(path)) for path in system_b_files]
+        normalization_records = []
+        a_frames = []
+        for path in system_a_files:
+            raw = ingest_file(path)
+            normalized = normalize_transactions(raw)
+            normalization_records.append({
+                "path": path,
+                "rows": len(raw),
+                "columns": list(raw.columns),
+                "detected_fields": normalized.attrs.get("detected_fields"),
+                "mappings": normalized.attrs.get("detected_mappings")
+            })
+            a_frames.append(normalized)
+
+        b_frames = []
+        for path in system_b_files:
+            raw = ingest_file(path)
+            normalized = normalize_transactions(raw)
+            normalization_records.append({
+                "path": path,
+                "rows": len(raw),
+                "columns": list(raw.columns),
+                "detected_fields": normalized.attrs.get("detected_fields"),
+                "mappings": normalized.attrs.get("detected_mappings")
+            })
+            b_frames.append(normalized)
         system_a = pd.concat(a_frames, ignore_index=True)
         system_b = pd.concat(b_frames, ignore_index=True)
 
         system_c = None
         if system_c_files:
-            c_frames = [normalize_transactions(ingest_file(path)) for path in system_c_files]
+            c_frames = []
+            for path in system_c_files:
+                raw = ingest_file(path)
+                normalized = normalize_transactions(raw)
+                normalization_records.append({
+                    "path": path,
+                    "rows": len(raw),
+                    "columns": list(raw.columns),
+                    "detected_fields": normalized.attrs.get("detected_fields"),
+                    "mappings": normalized.attrs.get("detected_mappings")
+                })
+                c_frames.append(normalized)
             system_c = pd.concat(c_frames, ignore_index=True)
 
         reconciled_df = reconcile_transactions(
             system_a, system_b, system_c=system_c, date_window_days=date_window_days
         )
-        return {"ok": True, "remittance_df": reconciled_df}
+        return {
+            "ok": True,
+            "remittance_df": reconciled_df,
+            "normalization_info": {
+                "steps": [
+                    "Normalize headers",
+                    "Detect date/amount/reference/description",
+                    "Standardize to canonical fields"
+                ],
+                "mappings": normalization_records
+            },
+            "reconciliation_info": {
+                "matching_logic": "Date-window matching with amount/reference confidence scoring.",
+                "tolerances": {
+                    "date_window_days": date_window_days,
+                    "amount_tolerance": 0.01,
+                    "partial_tolerance": 0.10
+                },
+                "warnings": [],
+                "assumptions": ["Systems are peer exports with independent timing."]
+            }
+        }
     except Exception as exc:
         logger.exception("Reconciliation pipeline failed")
         message = str(exc) if str(exc) else "Reconciliation failed."

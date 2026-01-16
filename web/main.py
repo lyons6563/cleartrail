@@ -18,6 +18,7 @@ from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from recon_engine.reconcile import run_reconciliation_from_file_groups
 from recon_engine.outputs import format_date_for_output
 from recon_engine import __version__ as engine_version
+from recon_engine.case_manifest import build_case_manifest, compute_sha256
 
 app = FastAPI(title="ClearTrail Service", version="0.3.0")
 
@@ -103,11 +104,7 @@ def _materialize_upload_group(
 
 
 def _sha256_file(path: str) -> str:
-    hash_obj = hashlib.sha256()
-    with open(path, "rb") as handle:
-        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
-            hash_obj.update(chunk)
-    return hash_obj.hexdigest()
+    return compute_sha256(path)
 
 
 def _serialize_remittance_rows(rows: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
@@ -206,6 +203,100 @@ def _write_outputs(
         {"name": "evidence_manifest.json", "path": manifest_path},
         {"name": "evidence_bundle.zip", "path": bundle_path},
     ]
+
+
+def _build_case_package(
+    case_id: str,
+    input_files: List[Dict[str, Any]],
+    normalization_info: Dict[str, Any],
+    reconciliation_info: Dict[str, Any],
+    outputs: List[Dict[str, Any]],
+    parameters: Dict[str, Any],
+    status: str,
+    error: Optional[str]
+) -> Dict[str, Any]:
+    cases_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "cases"))
+    case_dir = os.path.join(cases_dir, f"cleartrail_case_{case_id}")
+    inputs_dir = os.path.join(case_dir, "inputs")
+    outputs_dir = os.path.join(case_dir, "outputs")
+    os.makedirs(inputs_dir, exist_ok=True)
+    os.makedirs(outputs_dir, exist_ok=True)
+
+    # Copy inputs
+    input_entries = []
+    for item in input_files:
+        src = item.get("engine_path")
+        if not src:
+            continue
+        dest = os.path.join(inputs_dir, os.path.basename(src))
+        try:
+            with open(src, "rb") as r, open(dest, "wb") as w:
+                w.write(r.read())
+        except Exception:
+            logger.exception("Failed to copy input file into case package")
+        input_entries.append({
+            "original_filename": item.get("original_name"),
+            "saved_filename": os.path.basename(dest),
+            "rows": item.get("rows"),
+            "columns": item.get("columns"),
+            "detected_fields": item.get("detected_fields"),
+            "sha256": _sha256_file(dest) if os.path.exists(dest) else None,
+            "file_size_bytes": os.path.getsize(dest) if os.path.exists(dest) else None
+        })
+
+    # Copy outputs
+    output_entries = []
+    for item in outputs:
+        src = item.get("path")
+        if not src or not os.path.exists(src):
+            continue
+        dest = os.path.join(outputs_dir, os.path.basename(src))
+        try:
+            with open(src, "rb") as r, open(dest, "wb") as w:
+                w.write(r.read())
+        except Exception:
+            logger.exception("Failed to copy output file into case package")
+        output_entries.append({
+            "filename": os.path.basename(dest),
+            "rows": None,
+            "sha256": _sha256_file(dest) if os.path.exists(dest) else None
+        })
+
+    recon_info = dict(reconciliation_info)
+    recon_info["status"] = status
+    recon_info["error"] = error
+
+    manifest = build_case_manifest(
+        case_id=case_id,
+        input_files=input_entries,
+        normalization_info=normalization_info,
+        reconciliation_info=recon_info,
+        outputs=output_entries,
+        parameters=parameters,
+        engine_version=engine_version
+    )
+
+    manifest_path = os.path.join(case_dir, "manifest.json")
+    with open(manifest_path, "w", encoding="utf-8") as handle:
+        json.dump(manifest, handle, indent=2)
+
+    bundle_path = os.path.join(case_dir, f"cleartrail_case_{case_id}.zip")
+    with zipfile.ZipFile(bundle_path, "w", compression=zipfile.ZIP_DEFLATED) as zipf:
+        zipf.write(manifest_path, arcname="manifest.json")
+        for root, _, files in os.walk(case_dir):
+            for name in files:
+                full = os.path.join(root, name)
+                if full == bundle_path:
+                    continue
+                rel = os.path.relpath(full, case_dir)
+                zipf.write(full, arcname=rel)
+
+    return {
+        "case_dir": case_dir,
+        "manifest_path": manifest_path,
+        "bundle_path": bundle_path,
+        "manifest": manifest
+    }
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -854,6 +945,17 @@ async def reconcile(
         result = run_reconciliation_from_file_groups(system_a_paths, system_b_paths, system_c_paths)
         if not result.get("ok"):
             message = result.get("error") or "Reconciliation failed."
+            case_id = run_id
+            case_result = _build_case_package(
+                case_id=case_id,
+                input_files=a_materialized + b_materialized + c_materialized,
+                normalization_info=result.get("normalization_info", {}),
+                reconciliation_info=result.get("reconciliation_info", {}),
+                outputs=[],
+                parameters={"date_window_days": 3, "amount_tolerance": 0.01},
+                status="failed",
+                error=message
+            )
             return JSONResponse(status_code=400, content={"error": message})
         remittance_df = result["remittance_df"]
         remittance_rows = _serialize_remittance_rows(remittance_df.to_dict(orient="records"))
@@ -875,6 +977,30 @@ async def reconcile(
             run_id,
             a_materialized + b_materialized + c_materialized,
             {"date_window_days": 3, "amount_tolerance": 0.01}
+        )
+        normalization_info = result.get("normalization_info", {})
+        reconciliation_info = result.get("reconciliation_info", {})
+        stats_info = {
+            "totals": {
+                "system_a": float(remittance_df["amount_a"].fillna(0).sum()),
+                "system_b": float(remittance_df["amount_b"].fillna(0).sum())
+            },
+            "matched_exact": int((remittance_df["exception_code"] == "matched").sum()),
+            "matched_fuzzy": int((remittance_df["exception_code"] == "probable_match").sum()),
+            "unmatched_a": int((remittance_df["exception_code"] == "missing_in_a").sum()),
+            "unmatched_b": int((remittance_df["exception_code"] == "missing_in_b").sum()),
+            "exception_count": int((remittance_df["exception_code"] != "matched").sum())
+        }
+        reconciliation_info.update(stats_info)
+        case_result = _build_case_package(
+            case_id=run_id,
+            input_files=a_materialized + b_materialized + c_materialized,
+            normalization_info=normalization_info,
+            reconciliation_info=reconciliation_info,
+            outputs=outputs,
+            parameters={"date_window_days": 3, "amount_tolerance": 0.01},
+            status="complete",
+            error=None
         )
         outputs_payload = [
             {"name": output["name"], "url": f"/download/{run_id}/{output['name']}"}
@@ -907,14 +1033,22 @@ async def reconcile(
         )
 
         logger.info("Run %s completed", run_id)
+        outputs.append({"name": f"cleartrail_case_{run_id}.zip", "path": case_result["bundle_path"]})
+        outputs.append({"name": "manifest.json", "path": case_result["manifest_path"]})
+        outputs_payload.append({"name": f"cleartrail_case_{run_id}.zip", "url": f"/download/{run_id}/cleartrail_case_{run_id}.zip"})
+        outputs_payload.append({"name": "manifest.json", "url": f"/download/{run_id}/manifest.json"})
+
         return {
             "run_id": run_id,
+            "case_id": run_id,
             "inputs": [{"name": item["original_name"], "system": item.get("system")} for item in a_materialized + b_materialized + c_materialized],
             "stats": {
                 "matched": matched,
                 "unmatched": unmatched,
                 "exceptions": exception_summary,
             },
+            "case_zip_url": f"/download/{run_id}/cleartrail_case_{run_id}.zip",
+            "manifest_url": f"/download/{run_id}/manifest.json",
             "outputs": outputs_payload,
             "preview": preview,
         }

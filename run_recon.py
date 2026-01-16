@@ -11,10 +11,16 @@ import sys
 import argparse
 from pathlib import Path
 import pandas as pd
+import uuid
+import json
+import os
+import zipfile
 
 from recon_engine.ingest import ingest_file
 from recon_engine.normalize import normalize_transactions
 from recon_engine.reconcile import reconcile_transactions
+from recon_engine.case_manifest import build_case_manifest, compute_sha256
+from recon_engine import __version__ as engine_version
 
 
 def main():
@@ -36,6 +42,7 @@ Examples:
                        help='Output directory for reports (default: current directory)')
     
     args = parser.parse_args()
+    case_id = uuid.uuid4().hex
     
     # Validate input files
     if not Path(args.system_a_file).exists():
@@ -104,7 +111,6 @@ Examples:
         remittance_schedule[remittance_schedule['exception_code'] == 'probable_match'].to_csv(probable_path, index=False)
         remittance_schedule[remittance_schedule['exception_code'] != 'matched'].to_csv(output_dir / "exceptions.csv", index=False)
         exception_summary = remittance_schedule[remittance_schedule['exception_code'] != 'matched']['exception_code'].value_counts().to_dict()
-        import json
         with open(summary_path, "w", encoding="utf-8") as handle:
             json.dump(exception_summary, handle, indent=2)
         
@@ -137,6 +143,88 @@ Examples:
         print("=" * 60)
         print("Analysis Complete")
         print("=" * 60)
+
+        # Case package
+        cases_dir = Path("cases")
+        case_dir = cases_dir / f"cleartrail_case_{case_id}"
+        inputs_dir = case_dir / "inputs"
+        outputs_dir = case_dir / "outputs"
+        inputs_dir.mkdir(parents=True, exist_ok=True)
+        outputs_dir.mkdir(parents=True, exist_ok=True)
+
+        input_entries = []
+        for src in [args.system_a_file, args.system_b_file]:
+            src_path = Path(src)
+            dest_path = inputs_dir / src_path.name
+            dest_path.write_bytes(src_path.read_bytes())
+            input_entries.append({
+                "original_filename": src_path.name,
+                "saved_filename": dest_path.name,
+                "rows": None,
+                "columns": None,
+                "detected_fields": None,
+                "sha256": compute_sha256(str(dest_path)),
+                "file_size_bytes": dest_path.stat().st_size
+            })
+
+        output_entries = []
+        for path in [remittance_path, matched_path, probable_path, output_dir / "exceptions.csv", summary_path]:
+            if not path.exists():
+                continue
+            dest = outputs_dir / path.name
+            dest.write_bytes(path.read_bytes())
+            output_entries.append({
+                "filename": dest.name,
+                "rows": None,
+                "sha256": compute_sha256(str(dest))
+            })
+
+        normalization_info = {
+            "steps": [
+                "Normalize headers",
+                "Detect date/amount/reference/description",
+                "Standardize to canonical fields"
+            ],
+            "mappings": []
+        }
+        reconciliation_info = {
+            "matching_logic": "Date-window matching with amount/reference confidence scoring.",
+            "tolerances": {
+                "date_window_days": args.date_window,
+                "amount_tolerance": 0.01,
+                "partial_tolerance": 0.10
+            },
+            "warnings": [],
+            "assumptions": ["Systems are peer exports with independent timing."],
+            "status": "complete",
+            "error": None,
+            "totals": {"system_a": float(total_a), "system_b": float(total_b)},
+            "matched_exact": int((remittance_schedule["exception_code"] == "matched").sum()),
+            "matched_fuzzy": int((remittance_schedule["exception_code"] == "probable_match").sum()),
+            "unmatched_a": int((remittance_schedule["exception_code"] == "missing_in_a").sum()),
+            "unmatched_b": int((remittance_schedule["exception_code"] == "missing_in_b").sum()),
+            "exception_count": int((remittance_schedule["exception_code"] != "matched").sum())
+        }
+        manifest = build_case_manifest(
+            case_id=case_id,
+            input_files=input_entries,
+            normalization_info=normalization_info,
+            reconciliation_info=reconciliation_info,
+            outputs=output_entries,
+            parameters={"date_window_days": args.date_window, "amount_tolerance": 0.01},
+            engine_version=engine_version
+        )
+        manifest_path = case_dir / "manifest.json"
+        manifest_path.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
+
+        bundle_path = case_dir / f"cleartrail_case_{case_id}.zip"
+        with zipfile.ZipFile(bundle_path, "w", compression=zipfile.ZIP_DEFLATED) as zipf:
+            for root, _, files in os.walk(case_dir):
+                for name in files:
+                    full = Path(root) / name
+                    if full == bundle_path:
+                        continue
+                    zipf.write(full, arcname=str(full.relative_to(case_dir)))
         
     except Exception as e:
         print(f"Error: {e}")
