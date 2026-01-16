@@ -233,18 +233,11 @@ def _apply_exception_classification(df: pd.DataFrame, c_provided: bool, date_win
         if row.get('candidate_count_a', 0) > 1 and row.get('candidate_count_b', 0) > 1:
             score = row.get('confidence_score', 0.0)
             if score >= 0.85:
-                if row.get('match_status') == 'Exact':
-                    return {
-                        "code": "exact_match",
-                        "label": "Exact Match",
-                        "reason": "High confidence match resolved from multiple candidates.",
-                        "action": "No action required."
-                    }
                 return {
-                    "code": "amount_mismatch",
-                    "label": "Amount Mismatch",
-                    "reason": "High confidence match with amount variance.",
-                    "action": "Validate amounts or adjustments."
+                    "code": "matched",
+                    "label": "Matched",
+                    "reason": "High confidence match resolved from multiple candidates.",
+                    "action": "No action required."
                 }
             if 0.60 <= score < 0.85:
                 return {
@@ -296,25 +289,36 @@ def _apply_exception_classification(df: pd.DataFrame, c_provided: bool, date_win
                 "action": "Review source records and matching rules."
             }
         if row.get('match_status') == 'Exact':
-            if row.get('date_delta_days') and row.get('date_delta_days') > 0:
-                if row.get('date_delta_days') <= date_window_days:
-                    return {
-                        "code": "date_lag_within_tolerance",
-                        "label": "Date Lag (Within Tolerance)",
-                        "reason": "Match found with a timing gap within the allowed window.",
-                        "action": "Confirm timing is expected."
-                    }
+            ref_sim = _reference_similarity(row.get('reference_a'), row.get('reference_b'))
+            date_delta = row.get('date_delta_days') or 0
+            strict_ok = (date_delta <= date_window_days) and (ref_sim >= 0.6 or (not row.get('reference_a') and not row.get('reference_b')))
+            if strict_ok:
+                return {
+                    "code": "matched",
+                    "label": "Matched",
+                    "reason": "Amount and date align within tolerance.",
+                    "action": "No action required."
+                }
+            if date_delta > date_window_days:
                 return {
                     "code": "date_lag_outside_tolerance",
                     "label": "Date Lag (Outside Tolerance)",
                     "reason": "Match found with a timing gap beyond the allowed window.",
                     "action": "Review timing and confirm posting lag."
                 }
+            score = row.get('confidence_score', 0.0)
+            if score >= 0.60:
+                return {
+                    "code": "probable_match",
+                    "label": "Probable Match",
+                    "reason": "Match is likely but reference or timing is weak.",
+                    "action": "Review and confirm the match."
+                }
             return {
-                "code": "exact_match",
-                "label": "Exact Match",
-                "reason": "Amounts and dates align within tolerance.",
-                "action": "No action required."
+                "code": "ambiguous_match",
+                "label": "Ambiguous Match",
+                "reason": "Exact amount but insufficient supporting signals.",
+                "action": "Review candidate set and confirm the correct linkage."
             }
         return {
             "code": "unresolved",
@@ -335,8 +339,7 @@ def _apply_exception_classification(df: pd.DataFrame, c_provided: bool, date_win
         "probable_match": "medium",
         "partial_match_candidate": "medium",
         "duplicate_candidate": "low",
-        "date_lag_within_tolerance": "low",
-        "exact_match": "low",
+        "matched": "low",
         "unresolved": "medium"
     }
 

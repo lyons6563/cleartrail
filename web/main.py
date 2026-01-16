@@ -113,20 +113,23 @@ def _serialize_remittance_rows(rows: List[Dict[str, Any]]) -> List[Dict[str, Any
 
 def _write_outputs(temp_dir: str, remittance_rows: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     remittance_df = pd.DataFrame(remittance_rows)
-    matched_df = remittance_df[remittance_df["match_status"] == "Exact"].copy()
-    unmatched_df = remittance_df[remittance_df["match_status"] != "Exact"].copy()
+    matched_df = remittance_df[remittance_df["exception_code"] == "matched"].copy()
+    probable_df = remittance_df[remittance_df["exception_code"] == "probable_match"].copy()
+    exceptions_df = remittance_df[remittance_df["exception_code"] != "matched"].copy()
 
     outputs_dir = os.path.join(temp_dir, "outputs")
     os.makedirs(outputs_dir, exist_ok=True)
 
     remittance_path = os.path.join(outputs_dir, "remittance.csv")
     matched_path = os.path.join(outputs_dir, "matched.csv")
-    unmatched_path = os.path.join(outputs_dir, "unmatched.csv")
+    probable_path = os.path.join(outputs_dir, "probable.csv")
+    exceptions_path = os.path.join(outputs_dir, "exceptions.csv")
     summary_path = os.path.join(outputs_dir, "exception_summary.json")
 
     remittance_df.to_csv(remittance_path, index=False)
     matched_df.to_csv(matched_path, index=False)
-    unmatched_df.to_csv(unmatched_path, index=False)
+    probable_df.to_csv(probable_path, index=False)
+    exceptions_df.to_csv(exceptions_path, index=False)
 
     exception_summary: Dict[str, int] = {}
     for row in remittance_rows:
@@ -138,7 +141,8 @@ def _write_outputs(temp_dir: str, remittance_rows: List[Dict[str, Any]]) -> List
     return [
         {"name": "remittance.csv", "path": remittance_path},
         {"name": "matched.csv", "path": matched_path},
-        {"name": "unmatched.csv", "path": unmatched_path},
+        {"name": "probable.csv", "path": probable_path},
+        {"name": "exceptions.csv", "path": exceptions_path},
         {"name": "exception_summary.json", "path": summary_path},
     ]
 
@@ -792,12 +796,14 @@ async def reconcile(
         remittance_df = result["remittance_df"]
         remittance_rows = _serialize_remittance_rows(remittance_df.to_dict(orient="records"))
 
-        matched = sum(1 for row in remittance_rows if row.get("exception_code") in ["exact_match", "date_lag_within_tolerance"])
+        matched = sum(1 for row in remittance_rows if row.get("exception_code") == "matched")
         unmatched = len(remittance_rows) - matched
 
         exception_summary: Dict[str, int] = {}
         for row in remittance_rows:
             exception_code = row.get("exception_code") or "unresolved"
+            if exception_code == "matched":
+                continue
             exception_summary[exception_code] = exception_summary.get(exception_code, 0) + 1
 
         logger.info("Run %s writing outputs", run_id)
@@ -806,6 +812,7 @@ async def reconcile(
             {"name": output["name"], "url": f"/download/{run_id}/{output['name']}"}
             for output in outputs
         ]
+        remittance_rows = [r for r in remittance_rows if r.get("exception_code") != "matched"]
         remittance_rows.sort(key=lambda r: r.get("priority_rank", 0), reverse=True)
         preview = []
         for row in remittance_rows[:10]:

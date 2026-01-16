@@ -85,7 +85,7 @@ Examples:
         print(f"  Records analyzed: {len(remittance_schedule)}")
         
         # Count exceptions
-        exceptions = remittance_schedule[remittance_schedule['exception_code'] != 'exact_match']
+        exceptions = remittance_schedule[remittance_schedule['exception_code'] != 'matched']
         print(f"  Exceptions found: {len(exceptions)}")
         print()
         
@@ -96,13 +96,14 @@ Examples:
         
         remittance_path = output_dir / "remittance.csv"
         matched_path = output_dir / "matched.csv"
-        unmatched_path = output_dir / "unmatched.csv"
+        probable_path = output_dir / "probable.csv"
         summary_path = output_dir / "exception_summary.json"
 
         remittance_schedule.to_csv(remittance_path, index=False)
-        remittance_schedule[remittance_schedule['match_status'] == 'Exact'].to_csv(matched_path, index=False)
-        remittance_schedule[remittance_schedule['match_status'] != 'Exact'].to_csv(unmatched_path, index=False)
-        exception_summary = remittance_schedule['exception_code'].value_counts().to_dict()
+        remittance_schedule[remittance_schedule['exception_code'] == 'matched'].to_csv(matched_path, index=False)
+        remittance_schedule[remittance_schedule['exception_code'] == 'probable_match'].to_csv(probable_path, index=False)
+        remittance_schedule[remittance_schedule['exception_code'] != 'matched'].to_csv(output_dir / "exceptions.csv", index=False)
+        exception_summary = remittance_schedule[remittance_schedule['exception_code'] != 'matched']['exception_code'].value_counts().to_dict()
         import json
         with open(summary_path, "w", encoding="utf-8") as handle:
             json.dump(exception_summary, handle, indent=2)
@@ -111,7 +112,8 @@ Examples:
         print(f"  Files created:")
         print(f"    - remittance.csv")
         print(f"    - matched.csv")
-        print(f"    - unmatched.csv")
+        print(f"    - probable.csv")
+        print(f"    - exceptions.csv")
         print(f"    - exception_summary.json")
         print()
         
