@@ -1,0 +1,4 @@
+pay_date,payroll_total,deposit_total,variance,match_status,days_to_deposit,late_flag,exception_type,payroll_source_files,deposit_source_files,review_required,review_reason,severity,recommended_action,principal_at_risk,days_late_adjusted,assumed_annual_rate,lost_earnings_estimate
+2025-01-24,250.0,200.0,50.0,Missing,4.0,Yes,Missing Deposit,system_a.csv,system_b.csv,YES,Missing deposit,CRITICAL,Request deposit proof,250.0,1.0,0.05,0.03
+2025-02-07,300.0,300.0,0.0,Exact,5.0,Yes,Late Deposit,system_a.csv,system_b.csv,YES,Late deposit,HIGH,Calculate lost earnings,300.0,2.0,0.05,0.08
+2025-03-07,210.0,,210.0,Missing,,,Missing Deposit,system_a.csv,,YES,Missing deposit,CRITICAL,Request deposit proof,210.0,0.0,0.05,0.0

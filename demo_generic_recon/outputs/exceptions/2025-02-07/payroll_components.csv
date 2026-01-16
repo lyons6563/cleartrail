@@ -1,0 +1,2 @@
+employee_id,pay_date,deferral_amount,source_file,payroll_row_id
+E105,2025-02-07,300.0,system_a.csv,system_a.csv:PAY00006

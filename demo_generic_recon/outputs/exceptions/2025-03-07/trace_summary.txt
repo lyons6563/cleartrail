@@ -1,0 +1,10 @@
+Pay date: 2025-03-07
+Payroll total: 210.0
+Deposit total: nan
+Variance: 210.0
+Exception type: Missing Deposit
+Severity: CRITICAL
+Days late: 0
+Recommended action: Request deposit proof
+Payroll source files: system_a.csv
+Deposit source files: None

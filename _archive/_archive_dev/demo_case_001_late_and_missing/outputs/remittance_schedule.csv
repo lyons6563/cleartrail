@@ -1,0 +1,5 @@
+pay_date,payroll_total,deposit_total,matched_deposit_date,days_to_deposit,match_status,match_confidence,late_flag,exception_type,review_required,review_reason,payroll_source_files,deposit_source_files
+2025-10-10,1002.1,1001.1,2025-10-14,2,Partial,0.99,No,Amount Mismatch,YES,Amount mismatch,payroll.csv,trust.csv
+2025-10-24,1026.99,1026.99,2025-10-28,2,Exact,1.0,No,None,NO,,payroll.csv,trust.csv
+2025-11-07,809.67,790.95,2025-11-26,13,Partial,0.769,Yes,Amount Mismatch,YES,"Low confidence match, Late deposit, Amount mismatch",payroll.csv,trust.csv
+2025-11-21,854.95,790.95,2025-11-26,3,Partial,0.251,No,Amount Mismatch,YES,"Low confidence match, Amount mismatch",payroll.csv,trust.csv

@@ -1,0 +1,5 @@
+deposit_id,deposit_date,deposit_amount,description
+D001,2025-10-14,1001.10,Deposit for Payroll 2025-10-10 (PY001)
+D002,2025-10-28,1026.99,Deposit for Payroll 2025-10-24 (PY002)
+D003,2025-11-14,1029.78,Deposit for Payroll 2025-11-07 (PY003 - Late Deposit)
+D004,2025-11-26,790.95,Deposit for Payroll 2025-11-21 (PY004 - Short Deposit)

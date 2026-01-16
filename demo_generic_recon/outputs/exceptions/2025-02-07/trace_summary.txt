@@ -1,0 +1,10 @@
+Pay date: 2025-02-07
+Payroll total: 300.0
+Deposit total: 300.0
+Variance: 0.0
+Exception type: Late Deposit
+Severity: HIGH
+Days late: 5.0
+Recommended action: Calculate lost earnings
+Payroll source files: system_a.csv
+Deposit source files: system_b.csv

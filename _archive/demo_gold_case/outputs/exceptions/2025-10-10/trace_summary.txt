@@ -1,0 +1,10 @@
+Pay date: 2025-10-10
+Payroll total: 4122.5
+Deposit total: 4305.0
+Variance: -182.5
+Exception type: Amount Mismatch
+Severity: CRITICAL
+Days late: 0
+Recommended action: Request deposit proof
+Payroll source files: payroll_realistic.csv.csv
+Deposit source files: trust_realistic.csv.csv

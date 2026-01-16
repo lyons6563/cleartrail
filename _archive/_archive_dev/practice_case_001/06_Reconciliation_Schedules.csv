@@ -1,0 +1,8 @@
+Reconciliation Date,Reconciliation Type,Period Start,Period End,Source System,Source Amount,Target System,Target Amount,Variance,Variance Percent,Reconciled Status,Exception ID,Investigation Status,Resolution Notes
+2024-04-15,Payroll Truth vs Deposit Ledger,2024-01-01,2024-03-31,Payroll Truth Table,10980.00,Deposit Ledger,10980.00,0.00,0.00%,Reconciled,,N/A,Perfect match
+2024-04-15,Deposit Ledger vs Recordkeeper,2024-01-01,2024-03-31,Deposit Ledger,10980.00,Recordkeeper Postings,10980.00,0.00,0.00%,Reconciled,,N/A,Perfect match
+2024-04-15,Payroll Truth vs Recordkeeper,2024-01-01,2024-03-31,Payroll Truth Table,10980.00,Recordkeeper Postings,10980.00,0.00,0.00%,Reconciled,,N/A,Perfect match
+2024-04-15,Payroll Truth vs Deposit Ledger,2024-01-01,2024-01-31,Payroll Truth Table,3660.00,Deposit Ledger,3660.00,0.00,0.00%,Reconciled,,N/A,Perfect match
+2024-04-15,Deposit Ledger vs Recordkeeper,2024-02-01,2024-02-29,Deposit Ledger,3660.00,Recordkeeper Postings,3660.00,0.00,0.00%,Reconciled,,N/A,Perfect match
+2024-04-15,Payroll Truth vs Recordkeeper by Participant,2024-01-01,2024-03-31,Payroll Truth Table - PART001,2250.00,Recordkeeper Postings - PART001,2250.00,0.00,0.00%,Reconciled,,N/A,Perfect match
+2024-04-15,Payroll Truth vs Recordkeeper by Participant,2024-01-01,2024-03-31,Payroll Truth Table - PART002,3240.00,Recordkeeper Postings - PART002,3240.00,0.00,0.00%,Reconciled,,N/A,Perfect match

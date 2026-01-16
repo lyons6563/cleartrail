@@ -1,0 +1,4 @@
+evidence_id,document_name,document_type,source,date_range,record_count,total_amount,relevance,date_created
+PAY-001,payroll_q1_2024.csv,Payroll Export,Payroll System,2024-01-15 to 2024-03-12,16,5252.0,Primary source for contribution calculations,2026-01-13
+DEP-002,trust_statements_q1_2024.csv,Bank/Trust Statement,Bank/Custodian,2024-01-18 to 2024-03-20,4,5048.0,Verification of deposit timing and amounts,2026-01-13
+REM-003,remittance_schedule.csv,Reconciliation Report,Remittance Engine,2024-01-15 to 2024-03-12,4,5252.0,Reconciliation of payroll to deposits,2026-01-13

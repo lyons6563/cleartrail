@@ -1,0 +1,7 @@
+deposit_id,deposit_date,amount,source,payroll_period_reference,notes
+DEP-2024-001,2024-01-19,13750.00,Wire Transfer,2024-P01,On-time deposit - Old payroll provider
+DEP-2024-002,2024-01-31,13750.00,Wire Transfer,2024-P02,1 day late - Old payroll provider
+DEP-2024-003,2024-02-23,13750.00,Wire Transfer,2024-P03,5 days late - Payroll provider change occurred Feb 1 - NewPay Systems transition - Deposit amount matches payroll but recordkeeper missing EMP025 ($420.00)
+DEP-2024-004,2024-03-01,13330.00,Wire Transfer,2024-P04,4 days late - NewPay Systems - Amount mismatch: Should be $13,750.00 but only $13,330.00 deposited - Missing $420.00 (EMP025 not included in deposit)
+DEP-2024-005,2024-03-15,13330.00,Wire Transfer,2024-P05,3 days late - NewPay Systems - Amount mismatch: Should be $13,750.00 but only $13,330.00 deposited - Missing $420.00 (EMP025 not included)
+DEP-2024-006,2024-03-29,13330.00,Wire Transfer,2024-P06,3 days late - NewPay Systems - Amount mismatch: Should be $13,750.00 but only $13,330.00 deposited - Missing $420.00 (EMP025 not included)

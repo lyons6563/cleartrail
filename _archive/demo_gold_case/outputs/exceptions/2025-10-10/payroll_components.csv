@@ -1,0 +1,16 @@
+employee_id,pay_date,deferral_amount,source_file,payroll_row_id
+E1001,2025-10-10,285.0,payroll_realistic.csv.csv,payroll_realistic.csv.csv:PAY00001
+E1002,2025-10-10,320.0,payroll_realistic.csv.csv,payroll_realistic.csv.csv:PAY00002
+E1003,2025-10-10,295.0,payroll_realistic.csv.csv,payroll_realistic.csv.csv:PAY00003
+E1004,2025-10-10,0.0,payroll_realistic.csv.csv,payroll_realistic.csv.csv:PAY00004
+E1005,2025-10-10,310.0,payroll_realistic.csv.csv,payroll_realistic.csv.csv:PAY00005
+E1006,2025-10-10,275.0,payroll_realistic.csv.csv,payroll_realistic.csv.csv:PAY00006
+E1007,2025-10-10,290.0,payroll_realistic.csv.csv,payroll_realistic.csv.csv:PAY00007
+E1008,2025-10-10,305.0,payroll_realistic.csv.csv,payroll_realistic.csv.csv:PAY00008
+E1009,2025-10-10,280.0,payroll_realistic.csv.csv,payroll_realistic.csv.csv:PAY00009
+E1010,2025-10-10,315.0,payroll_realistic.csv.csv,payroll_realistic.csv.csv:PAY00010
+E1011,2025-10-10,270.0,payroll_realistic.csv.csv,payroll_realistic.csv.csv:PAY00011
+E1012,2025-10-10,300.0,payroll_realistic.csv.csv,payroll_realistic.csv.csv:PAY00012
+E1013,2025-10-10,260.0,payroll_realistic.csv.csv,payroll_realistic.csv.csv:PAY00013
+E1014,2025-10-10,335.0,payroll_realistic.csv.csv,payroll_realistic.csv.csv:PAY00014
+E1015,2025-10-10,282.5,payroll_realistic.csv.csv,payroll_realistic.csv.csv:PAY00015

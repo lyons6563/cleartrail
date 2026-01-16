@@ -1,0 +1,4 @@
+pay_date,payroll_total,deposit_total,variance,match_status,days_to_deposit,late_flag,exception_type,payroll_source_files,deposit_source_files
+2025-10-10,1002.1,1001.1,1.0,Partial,2,No,Amount Mismatch,payroll.csv,trust.csv
+2025-11-07,809.67,790.95,18.719999999999914,Partial,13,Yes,Amount Mismatch,payroll.csv,trust.csv
+2025-11-21,854.95,790.95,64.0,Partial,3,No,Amount Mismatch,payroll.csv,trust.csv

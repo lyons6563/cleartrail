@@ -1,0 +1,2 @@
+deposit_id,deposit_date,deposit_amount,source_file,deposit_row_id
+DEP001,2025-10-14,4305.0,trust_realistic.csv.csv,trust_realistic.csv.csv:DEP00002

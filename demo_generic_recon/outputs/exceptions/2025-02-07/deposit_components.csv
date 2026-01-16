@@ -1,0 +1,2 @@
+deposit_id,deposit_date,deposit_amount,source_file,deposit_row_id
+D003,2025-02-14,300.0,system_b.csv,system_b.csv:DEP00003

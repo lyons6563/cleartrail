@@ -1,0 +1,7 @@
+deposit_date,Transaction_Type,Description,deposit_amount,deposit_id,Balance,source_file,exclusion_reason
+10/16/2025,ACH DEBIT,Monthly ACH Transfer Fee,-15.0,FEE10162025,138540.0,trust_realistic.csv.csv,"Excluded: description contains FEE, NSF"
+10/20/2025,INTEREST CREDIT,October Monthly Interest Income,127.85,INT1020,138667.85,trust_realistic.csv.csv,Excluded: description contains INTEREST
+10/28/2025,REVERSAL,Reversal of Wire Transfer WIRE789 ERROR,100000.0,REV001,243289.35,trust_realistic.csv.csv,"Excluded: description contains REVERSAL, NSF"
+11/03/2025,ACH DEBIT,Third Party Administrator Fee,-500.0,ADMIN1103,227789.35,trust_realistic.csv.csv,Excluded: description contains FEE
+11/15/2025,ACH CREDIT,Quarterly Interest Dividend Reinvestment,289.5,DIV115,232413.85,trust_realistic.csv.csv,Excluded: description contains INTEREST
+11/18/2025,ACH DEBIT,ACH Return - Insufficient Funds,-50.0,RET1118,232363.85,trust_realistic.csv.csv,Excluded: description contains RETURN

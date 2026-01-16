@@ -1,0 +1,3 @@
+pay_date,payroll_total,deposit_total,variance,match_status,days_to_deposit,late_flag,exception_type,payroll_source_files,deposit_source_files
+2024-02-26,1313.0,1313.0,0.0,Exact,10,Yes,Late Deposit,payroll_q1_2024.csv,trust_statements_q1_2024.csv
+2024-03-12,1313.0,1109.0,204.0,Missing,6,Yes,Missing Deposit,payroll_q1_2024.csv,trust_statements_q1_2024.csv

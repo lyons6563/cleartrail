@@ -1,0 +1,3 @@
+case_id,pay_date,exception_type,severity,principal_at_risk,days_late_adjusted,lost_earnings_estimate,regulatory_basis,correction_required,documents_needed,next_action_owner,generated_on
+CP-0001,2025-01-24,Missing Deposit,CRITICAL,250.0,1.0,0.03,Policy: Missing deposits require correction and documentation.,Yes,"Source register, deposit statement, deposit confirmation or proof of correction",Process Owner,2026-01-15
+CP-0002,2025-03-07,Missing Deposit,CRITICAL,210.0,0.0,0.0,Policy: Missing deposits require correction and documentation.,Yes,"Source register, deposit statement, deposit confirmation or proof of correction",Process Owner,2026-01-15
