@@ -71,12 +71,16 @@ def _build_match_row(
         'reference_a': a_row.get('reference') if a_row is not None else None,
         'source_file_a': a_row.get('source_file') if a_row is not None else None,
         'row_id_a': a_row.get('row_id') if a_row is not None else None,
+        'source_a_file': a_row.get('source_file') if a_row is not None else None,
+        'source_a_row_id': a_row.get('row_id') if a_row is not None else None,
         'txn_date_b': b_row.get('txn_date') if b_row is not None else None,
         'txn_amount_b': b_row.get('txn_amount') if b_row is not None else None,
         'description_b': b_row.get('description') if b_row is not None else None,
         'reference_b': b_row.get('reference') if b_row is not None else None,
         'source_file_b': b_row.get('source_file') if b_row is not None else None,
         'row_id_b': b_row.get('row_id') if b_row is not None else None,
+        'source_b_file': b_row.get('source_file') if b_row is not None else None,
+        'source_b_row_id': b_row.get('row_id') if b_row is not None else None,
         'date_delta_days': date_diff,
         'amount_delta': amount_diff,
         'match_status': match_status,
@@ -91,6 +95,8 @@ def _build_match_row(
         'amount_a': a_row.get('txn_amount') if a_row is not None else None,
         'amount_b': b_row.get('txn_amount') if b_row is not None else None,
         'amount_c': None,
+        'source_c_file': None,
+        'source_c_row_id': None,
         'exception_code': None,
         'exception_label': None,
         'exception_reason': None,
@@ -476,6 +482,8 @@ def reconcile_transactions(
             continue
         reconciled.at[idx, 'present_in_c'] = True
         reconciled.at[idx, 'amount_c'] = matched_c.get('txn_amount')
+        reconciled.at[idx, 'source_c_file'] = matched_c.get('source_file')
+        reconciled.at[idx, 'source_c_row_id'] = matched_c.get('row_id')
 
     return _apply_exception_classification(reconciled, True, date_window_days)
 

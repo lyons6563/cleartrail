@@ -13,11 +13,14 @@ TRANSACTION_ALIASES = {
     'txn_date': [
         'date', 'txn_date', 'transaction_date', 'post_date', 'posted_date',
         'effective_date', 'value_date', 'entry_date',
-        'postdate', 'valuedate', 'bookdate', 'effectivedate', 'transdate', 'txndate'
+        'postdate', 'valuedate', 'bookdate', 'effectivedate', 'transdate', 'txndate',
+        'orderdate', 'order_date', 'settlementdate', 'settlement_date', 'postdate', 'post_date'
     ],
     'txn_amount': [
         'amount', 'total', 'value', 'net_amount', 'gross_amount',
-        'payment', 'charge', 'credit_amount', 'debit_amount'
+        'payment', 'charge', 'credit_amount', 'debit_amount',
+        'grossamount', 'gross_amount', 'total', 'totalamount', 'total_amount',
+        'payout', 'payment', 'credit', 'debit'
     ],
     'description': [
         'memo', 'description', 'details', 'narrative', 'desc'
@@ -178,7 +181,8 @@ def _detect_date_column(df: pd.DataFrame, candidates: List[str]) -> str:
 def _detect_amount_series(df: pd.DataFrame) -> pd.Series:
     amount_candidates = [
         'amount', 'total', 'value', 'net_amount', 'gross_amount', 'payment', 'charge',
-        'amount_usd', 'txn_amount', 'transaction_amount'
+        'amount_usd', 'txn_amount', 'transaction_amount',
+        'grossamount', 'totalamount', 'total_amount', 'payout', 'credit', 'debit'
     ]
     credit_candidates = ['credit', 'credit_amount', 'cr_amount', 'amount_credit']
     debit_candidates = ['debit', 'debit_amount', 'dr_amount', 'amount_debit']

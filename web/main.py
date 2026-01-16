@@ -5,6 +5,8 @@ import logging
 import os
 import tempfile
 import uuid
+import hashlib
+import zipfile
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from typing import List, Dict, Any, Optional
@@ -15,6 +17,7 @@ from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 
 from recon_engine.reconcile import run_reconciliation_from_file_groups
 from recon_engine.outputs import format_date_for_output
+from recon_engine import __version__ as engine_version
 
 app = FastAPI(title="ClearTrail Service", version="0.3.0")
 
@@ -99,6 +102,14 @@ def _materialize_upload_group(
     return group
 
 
+def _sha256_file(path: str) -> str:
+    hash_obj = hashlib.sha256()
+    with open(path, "rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            hash_obj.update(chunk)
+    return hash_obj.hexdigest()
+
+
 def _serialize_remittance_rows(rows: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     serialized: List[Dict[str, Any]] = []
     for row in rows:
@@ -111,7 +122,13 @@ def _serialize_remittance_rows(rows: List[Dict[str, Any]]) -> List[Dict[str, Any
     return serialized
 
 
-def _write_outputs(temp_dir: str, remittance_rows: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+def _write_outputs(
+    temp_dir: str,
+    remittance_rows: List[Dict[str, Any]],
+    run_id: str,
+    input_files: List[Dict[str, Any]],
+    params: Dict[str, Any]
+) -> List[Dict[str, Any]]:
     remittance_df = pd.DataFrame(remittance_rows)
     matched_df = remittance_df[remittance_df["exception_code"] == "matched"].copy()
     probable_df = remittance_df[remittance_df["exception_code"] == "probable_match"].copy()
@@ -125,6 +142,9 @@ def _write_outputs(temp_dir: str, remittance_rows: List[Dict[str, Any]]) -> List
     probable_path = os.path.join(outputs_dir, "probable.csv")
     exceptions_path = os.path.join(outputs_dir, "exceptions.csv")
     summary_path = os.path.join(outputs_dir, "exception_summary.json")
+    metadata_path = os.path.join(outputs_dir, "run_metadata.json")
+    manifest_path = os.path.join(outputs_dir, "evidence_manifest.json")
+    bundle_path = os.path.join(outputs_dir, "evidence_bundle.zip")
 
     remittance_df.to_csv(remittance_path, index=False)
     matched_df.to_csv(matched_path, index=False)
@@ -138,12 +158,53 @@ def _write_outputs(temp_dir: str, remittance_rows: List[Dict[str, Any]]) -> List
     with open(summary_path, "w", encoding="utf-8") as handle:
         json.dump(exception_summary, handle, indent=2)
 
+    run_metadata = {
+        "run_id": run_id,
+        "run_timestamp_utc": datetime.utcnow().isoformat() + "Z",
+        "engine_version": engine_version,
+        "inputs": [
+            {
+                "filename": item.get("original_name"),
+                "sha256": _sha256_file(item.get("engine_path"))
+            }
+            for item in input_files
+        ],
+        "parameters": params
+    }
+    with open(metadata_path, "w", encoding="utf-8") as handle:
+        json.dump(run_metadata, handle, indent=2)
+
+    output_files = [
+        remittance_path,
+        matched_path,
+        probable_path,
+        exceptions_path,
+        summary_path,
+        metadata_path
+    ]
+    manifest = {
+        "artifacts": [
+            {"filename": os.path.basename(path), "sha256": _sha256_file(path)}
+            for path in output_files
+        ]
+    }
+    with open(manifest_path, "w", encoding="utf-8") as handle:
+        json.dump(manifest, handle, indent=2)
+    output_files.append(manifest_path)
+
+    with zipfile.ZipFile(bundle_path, "w", compression=zipfile.ZIP_DEFLATED) as zipf:
+        for path in output_files:
+            zipf.write(path, arcname=os.path.basename(path))
+
     return [
         {"name": "remittance.csv", "path": remittance_path},
         {"name": "matched.csv", "path": matched_path},
         {"name": "probable.csv", "path": probable_path},
         {"name": "exceptions.csv", "path": exceptions_path},
         {"name": "exception_summary.json", "path": summary_path},
+        {"name": "run_metadata.json", "path": metadata_path},
+        {"name": "evidence_manifest.json", "path": manifest_path},
+        {"name": "evidence_bundle.zip", "path": bundle_path},
     ]
 
 
@@ -732,11 +793,12 @@ async def root() -> str:
         }
 
         const outputLinks = data?.outputs ?? [];
-        for (const output of outputLinks) {
+        const bundle = outputLinks.find(o => o.name === "evidence_bundle.zip");
+        if (bundle) {
           const li = document.createElement("li");
           const link = document.createElement("a");
-          link.href = output.url;
-          link.textContent = output.name;
+          link.href = bundle.url;
+          link.textContent = "Download evidence bundle";
           li.appendChild(link);
           downloads.appendChild(li);
         }
@@ -807,7 +869,13 @@ async def reconcile(
             exception_summary[exception_code] = exception_summary.get(exception_code, 0) + 1
 
         logger.info("Run %s writing outputs", run_id)
-        outputs = _write_outputs(temp_dir, remittance_rows)
+        outputs = _write_outputs(
+            temp_dir,
+            remittance_rows,
+            run_id,
+            a_materialized + b_materialized + c_materialized,
+            {"date_window_days": 3, "amount_tolerance": 0.01}
+        )
         outputs_payload = [
             {"name": output["name"], "url": f"/download/{run_id}/{output['name']}"}
             for output in outputs
