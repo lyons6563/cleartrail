@@ -1,0 +1,4 @@
+.tmp.driveupload/
+.venv/
+__pycache__/
+*.log
