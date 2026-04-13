@@ -14,20 +14,20 @@ TRANSACTION_ALIASES = {
         'date', 'txn_date', 'transaction_date', 'post_date', 'posted_date',
         'effective_date', 'value_date', 'entry_date',
         'postdate', 'valuedate', 'bookdate', 'effectivedate', 'transdate', 'txndate',
-        'orderdate', 'order_date', 'settlementdate', 'settlement_date', 'postdate', 'post_date'
+        'orderdate', 'order_date', 'settlementdate', 'settlement_date',
     ],
     'txn_amount': [
         'amount', 'total', 'value', 'net_amount', 'gross_amount',
         'payment', 'charge', 'credit_amount', 'debit_amount',
-        'grossamount', 'gross_amount', 'total', 'totalamount', 'total_amount',
-        'payout', 'payment', 'credit', 'debit'
+        'grossamount', 'totalamount', 'total_amount',
+        'payout', 'credit', 'debit',
     ],
     'description': [
-        'memo', 'description', 'details', 'narrative', 'desc'
+        'memo', 'description', 'details', 'narrative', 'desc',
     ],
     'reference': [
-        'reference', 'ref', 'trace', 'id', 'txn_id', 'transaction_id'
-    ]
+        'reference', 'ref', 'trace', 'id', 'txn_id', 'transaction_id',
+    ],
 }
 
 

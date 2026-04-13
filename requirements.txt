@@ -1,0 +1,15 @@
+# Direct dependencies for ClearTrail reconciliation engine
+
+# Core data
+pandas>=2.0.0
+numpy>=1.24.0
+
+# Date parsing
+python-dateutil>=2.8.0
+
+# API / web console
+fastapi>=0.110.0
+uvicorn>=0.29.0
+
+# Testing
+pytest>=8.0.0
